@@ -489,7 +489,7 @@ def samename_distinguish(index, p):
 			#判定函数
 			if p.birth == '':
 				#调用学校判定函数, 返回true,则含有, false则没有
-				if Sch_overlap(p, per) and p.degree == per[1].degree and job_overlap(p, per):
+				if p.name == per[1].name and Sch_overlap(p, per) and p.degree == per[1].degree and job_overlap(p, per):
 					#调用插入函数, 将index插入到对应组中
 					###
 					if insert_index(per, index):
@@ -498,13 +498,13 @@ def samename_distinguish(index, p):
 					flag += 1
 			elif p.birth == per[1].birth:
 				#判定学位和性别
-				if per[1].degree == p.degree and job_overlap(p, per):
+				if p.name == per[1].name and per[1].degree == p.degree and job_overlap(p, per):
 					#调用插入函数, 将index插入到对应组中
 					if insert_index(per, index):
 						break
 				else:
 					flag += 1
-			elif per[1].birth != '' and (p.birth.strip() in per[1].birth.strip() or per[1].birth.strip() in p.birth.strip()):
+			elif p.name == per[1].name and per[1].birth != '' and (p.birth.strip() in per[1].birth.strip() or per[1].birth.strip() in p.birth.strip()):
 				#调用学校判定函数
 				#print p.birth+'#############'+per[1].birth
 				if per[1].degree == p.degree:
@@ -533,7 +533,7 @@ def doParse(linestr, index):
 	p = person(l_content)
 	#print p
 	if len(l_content) < 3:
-		print 'data type problem'
+		print('data type problem')
 		return
 	else:
 		p.sourceinfo.append(getSegString(l_content[2]))
