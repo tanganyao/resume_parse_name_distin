@@ -546,7 +546,7 @@ def doParse(linestr, index):
 ###############################################################################################################
 #添加index
 def readfile(file):
-	for index, line in enumerate(file.readlines()[:100]):
+	for index, line in enumerate(file.readlines()[:200]):
 		line = line.decode('utf-8')
 		doParse(line, index)
 	print l_index
