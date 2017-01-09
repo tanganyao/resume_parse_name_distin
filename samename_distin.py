@@ -221,13 +221,15 @@ class person:
 
     def getrightorg(self,strorg,strpos,strtime,type):
         #print strorg,'ooooooo',strpos,'oooooo',type
-        m = re.match(re.compile('^.*(' + curwtag + '|' + prewtag + '|' + onamestarttag + ')(.{2,})$'), strorg)
+        #match 改为 search
+        m = re.search(re.compile('^.*(' + curwtag + '|' + prewtag + '|' + onamestarttag + ')(.{2,})$'), strorg)
         if m:
             strorg = m.group(2)
         # strorg = re.sub('^(' + curorgrep + ')',sourceinfo[0],strorg)
 
         strpos = re.sub('(' + ptagmv + '){0,2}$','',strpos)
-        m = re.match(re.compile('^.*(' + curwtag + '|' + prewtag + '|' + onamestarttag + ')(.{2,})$'), strpos)
+        #match 改为 search
+        m = re.search(re.compile('^.*(' + curwtag + '|' + prewtag + '|' + onamestarttag + ')(.{2,})$'), strpos)
         if m:
             strpos = m.group(2)
 
@@ -235,13 +237,15 @@ class person:
 
         if self.hasspecialstrings(strorg,ntsuffix) and strpos:
             reg = re.compile(u'^(.*(' + ntsuffix + '))(.*?)$')
-            m = re.match(reg,strorg)
+            #match 改为 search
+            m = re.search(reg,strorg)
             if m:
                 strorg = m.group(1)
                 strpos = m.group(3) + strpos
         elif strorg.find('/ns ') >= 0:
             reg = re.compile(u'^(.*(' + departmentsuffix + '))(.*?)$')
-            m = re.match(reg,strorg)
+            #match 改为 search
+            m = re.search(reg,strorg)
             if m:
                 strorg = m.group(1)
                 strpos = m.group(3) + strpos
@@ -268,24 +272,25 @@ class person:
     def parseop(self,strwork,strtime):
         # print strwork,'------------------'
         oplist = []
-        reg = re.compile('^.*(' + curwtag + '|' + prewtag + '|' + onamestarttag +')([^' + curwtag + '|' + prewtag + '|' + onamestarttag +']{2,})(' + \
+        #错误出在后面有curwtag， prewtag规则的覆盖
+        reg = re.compile('^.*(' + curwtag + ')(.{0,}(' + ntsuffix + '|' + departmentsuffix +'))(' + \
                          curwtag + '|' + prewtag + '|' + onamestarttag +')(.{2,})$',re.S)#在org任pos
-        m = re.match(reg,strwork)
+        m = re.search(reg,strwork)  #将match 改成 search
         if m:
             oplist += self.getrightorg(m.group(2),m.group(4),strtime,1)
             return oplist
         reg = re.compile('^.*(' + curwtag + '|' + prewtag + '|' + onamestarttag +')(.{0,}(' + ntsuffix + '|' + departmentsuffix +'))(.{2,})$',re.S)#任org+pos
-        m = re.match(reg,strwork)
+        m = re.search(reg,strwork)   #将match 改成 search
         if m:
             oplist += self.getrightorg(m.group(2),m.group(4),strtime,2)
             return oplist
         reg = re.compile('^(.{0,}(' + ntsuffix + '|' + departmentsuffix +'))(' + curwtag + '|' + prewtag + '|' + onamestarttag +')(.{2,})$',re.S)#org任pos
-        m = re.match(reg,strwork)
+        m = re.search(reg,strwork)  #将match 改成 search  
         if m:
             oplist += self.getrightorg(m.group(1),m.group(4),strtime,3)
             return oplist
         reg = re.compile('^(.{0,}(' + ntsuffix + '|' + departmentsuffix +'))(.{2,})$',re.S)#orgpos
-        m = re.match(reg,strwork)
+        m = re.search(reg,strwork)   #将match 改成 search
         if m:
             oplist += self.getrightorg(m.group(1),m.group(3),strtime,4)
             return oplist
@@ -490,8 +495,8 @@ def samename_distinguish(index, p):
 
     #print '\n'.join(p.joblist).encode('gb2312')
     #print p.birth
-    print ' '.join(p.joblist)
-    print "!!!!!!!!!!!!!!!!!!!!!!!!"
+    #print ' '.join(p.joblist)
+    #print "!!!!!!!!!!!!!!!!!!!!!!!!"
     flag = 0
     if len(l_index) == 0:
         l_index.append([index])
@@ -551,6 +556,8 @@ def samename_distinguish(index, p):
                     #调用插入函数, 将index插入到对应组中
                     if insert_index(per, index):
                         break
+                else:
+                    flag += 1
             else:
                 #生日不等
                 flag += 1
