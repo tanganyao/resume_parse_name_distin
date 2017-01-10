@@ -18,7 +18,7 @@ ntsuffix = u'公司|集团|企业|厂|店|所|院|厅|/nc ' #机构后缀
 departmentsuffix = u'/nt |中心|部|组|队|科|处' #部门后缀
 
 
-prewtag = u'历任|曾任|任职|兼任|担任|出任|工作|先后|就任|供职|就职|入职|就职|职于|职於|创办|创立|设立|创建|任教|加盟|组建|加入|进入|/t 入|/t 在|/t 任|/t 于|/t 於' #曾任提示
+prewtag = u'委任为|历任|曾任|任职|兼任|担任|出任|工作|先后|就任|供职|就职|入职|就职|职于|职於|创办|创立|设立|创建|任教|加盟|组建|加入|进入|/t 入|/t 在|/t 任|/t 于|/t 於' #曾任提示
 curwtag = u'现任|今任|至今|目前|起任|现在' #现任提示
 
 
@@ -74,7 +74,8 @@ class person:
             self.nationality = nationality
 
     def getbirth(self):
-        strbase = re.split(u'；|。|！',self.sourceinfo[3])[0]
+        #改为取两句话
+        strbase = ''.join(re.split(u'；|。|！',self.sourceinfo[3])[:2])
         reg = re.compile(u' ([^ ]+)/t .?生/',re.S)
         reg1 = re.compile(u'生[^，|、|,]+ ([^ ]+)/t ',re.S)
         m = reg.search(strbase)
@@ -221,6 +222,7 @@ class person:
 
     def getrightorg(self,strorg,strpos,strtime,type):
         #print strorg,'ooooooo',strpos,'oooooo',type
+        #print strorg+'------------------'
         #match 改为 search
         m = re.search(re.compile('^.*(' + curwtag + '|' + prewtag + '|' + onamestarttag + ')(.{2,})$'), strorg)
         if m:
@@ -234,7 +236,7 @@ class person:
             strpos = m.group(2)
 
         # print strorg,'ooooooo',strpos
-
+        #print strorg, '!!!!!!!!!!!!!!!!!!!!!!!!!!!'+strpos
         if self.hasspecialstrings(strorg,ntsuffix) and strpos:
             reg = re.compile(u'^(.*(' + ntsuffix + '))(.*?)$')
             #match 改为 search
@@ -270,28 +272,31 @@ class person:
         return oplist
 
     def parseop(self,strwork,strtime):
-        # print strwork,'------------------'
         oplist = []
         #错误出在后面有curwtag， prewtag规则的覆盖
-        reg = re.compile('^.*(' + curwtag + ')(.{0,}(' + ntsuffix + '|' + departmentsuffix +'))(' + \
+        reg = re.compile('^.*(' + onamestarttag +')(.{0,}(' + ntsuffix + '|' + departmentsuffix +'))(' + \
                          curwtag + '|' + prewtag + '|' + onamestarttag +')(.{2,})$',re.S)#在org任pos
-        m = re.search(reg,strwork)  #将match 改成 search
+        m = re.match(reg,strwork)  #将match 改成 search
         if m:
+            #print m.group(2), '111111111111111111111111111'
             oplist += self.getrightorg(m.group(2),m.group(4),strtime,1)
             return oplist
         reg = re.compile('^.*(' + curwtag + '|' + prewtag + '|' + onamestarttag +')(.{0,}(' + ntsuffix + '|' + departmentsuffix +'))(.{2,})$',re.S)#任org+pos
         m = re.search(reg,strwork)   #将match 改成 search
         if m:
+            #print m.group(2), '222222222222222222222222222'
             oplist += self.getrightorg(m.group(2),m.group(4),strtime,2)
             return oplist
         reg = re.compile('^(.{0,}(' + ntsuffix + '|' + departmentsuffix +'))(' + curwtag + '|' + prewtag + '|' + onamestarttag +')(.{2,})$',re.S)#org任pos
         m = re.search(reg,strwork)  #将match 改成 search  
         if m:
+            #print m.group(1), '33333333333333333333333333'
             oplist += self.getrightorg(m.group(1),m.group(4),strtime,3)
             return oplist
         reg = re.compile('^(.{0,}(' + ntsuffix + '|' + departmentsuffix +'))(.{2,})$',re.S)#orgpos
         m = re.search(reg,strwork)   #将match 改成 search
         if m:
+            #print m.group(1), '44444444444444444444444444'
             oplist += self.getrightorg(m.group(1),m.group(3),strtime,4)
             return oplist
         oplist += self.getrightorg('',strwork,strtime,5)
@@ -305,14 +310,16 @@ class person:
         strtime = self.getworktime(strworkinfo)
         strcurtime = self.getcurworktime(strworkinfo)
         #print strtime,'--------',strcurtime
-        for work in re.split(u'，|、|,',strworkinfo):
+        #添加;
+        for work in re.split(u'，|、|,|;',strworkinfo):
             # if hasspecialstrings(work,curwtag + '|' + prewtag + '|' + onamestarttag) and not ostart:
             #     ostart = True
             # if ostart:
-            #print work, '!!!!!!!!!!!!!!!!!!!!!!!!!!!'
             strcurtimetmp = self.getcurworktime(work)
             work = re.sub('^.*/t ','',work)
+            
             if re.match(re.compile(u'^(.*?)(' + positiontag +u')$'), work):
+                
                 if strcurtimetmp:
                     curoplist += self.parseop(work,strcurtimetmp)
                 else:
@@ -355,8 +362,10 @@ class person:
         # print tsentencenotag,'pppppppppppp'
         oplist = []
         curoplist = []
+        #添加;
         if self.hasspecialstrings(tsentencenotag,curwtag + '|' + prewtag) or re.match(re.compile(u'^(.*?)(' + positiontag +u')(，|、|,|$)'), tsentencenotag): #含职位或者职位提示
             strwork = ''
+            #添加了 ;
             reg = re.compile('(' + curwtag + '|' + prewtag + '|' + onamestarttag +')(.{0,}(' + positiontag +u'))(，|、|,|$)',re.S) #含职位和职位提示
             while(1):
                 m = reg.search(tsentencenotag)
@@ -455,11 +464,20 @@ def insert_index(per, index):
 
 #####################################################判断学校,工作是否有重叠##########################################
 def job_overlap(p, per):
-
+    #除去“有限责任公司”特例
+    out_case_tag = u'股份有限公司'
     for job in p.joblist:
+        if out_case_tag == job:
+            continue
         for per_job in per[1].joblist:
-            if job == per_job:
-                return True
+            if out_case_tag == per_job:
+                continue
+            else:
+                if job == per_job:
+                    return True
+                elif (len(job)>5 and len(per_job)>5) and (job in per_job or per_job in job):
+                    print job+'wwwwwwwwwwwwwwwwwwwwwwww'
+                    return True
     return False
 
 def Sch_overlap(p, per):
@@ -494,9 +512,9 @@ def samename_distinguish(index, p):
     p.getwork()
 
     #print '\n'.join(p.joblist).encode('gb2312')
-    #print p.birth
-    #print ' '.join(p.joblist)
-    #print "!!!!!!!!!!!!!!!!!!!!!!!!"
+    print p.birth
+    print ' '.join(p.joblist)
+    print "!!!!!!!!!!!!!!!!!!!!!!!!"
     flag = 0
     if len(l_index) == 0:
         l_index.append([index])
@@ -514,23 +532,32 @@ def samename_distinguish(index, p):
                     if p.name == per[1].name and job_overlap(p, per):
                         #调用插入函数, 将index插入到对应组中
                         ###
+                        print "11111111111111111111111111111"
                         if insert_index(per, index):
                             break
                     else:
                         flag += 1
                 else:
-                    if p.name == per[1].name and Sch_overlap(p, per) and p.degree == per[1].degree and job_overlap(p, per):
+                    if p.name == per[1].name and job_overlap(p, per) and (Sch_overlap(p, per) or p.degree == per[1].degree):
                         #调用插入函数, 将index插入到对应组中
                         ###
+                        print "222222222222222222222222222222"
                         if insert_index(per, index):
                             break
                     else:
                         flag += 1
             elif p.birth == per[1].birth:
                 #判定学位和性别
+                if p.name == per[1].name and len(p.birth)>=7 and len(per[1].birth)>=7 and \
+                    (p.degree == per[1].degree or job_overlap(p, per) or Sch_overlap(p, per)):
+                    #调用插入函数, 将index插入到对应组中
+                    print "333333333333333333333333333333"
+                    if insert_index(per, index):
+                        break
                 #出去学位，由于何红渠
                 if p.name == per[1].name and job_overlap(p, per):
                     #调用插入函数, 将index插入到对应组中
+                    print "4444444444444444444444444444444"
                     if insert_index(per, index):
                         break
                 else:
@@ -541,8 +568,16 @@ def samename_distinguish(index, p):
                 #print per[1].degree +'-------' + p.degree
                 #由于高学敏，取消学位的判断：因为某些简历上没明确给出更高的学历
                 #if per[1].degree == p.degree:
+                #添加生日的判断，如果两个人的生日长度都达到月，基本判定两人为同一个人
+                if p.name == per[1].name and len(p.birth)>=7 and len(per[1].birth)>=7 and \
+                    (p.degree == per[1].degree or job_overlap(p, per) or Sch_overlap(p, per)):
+                    #调用插入函数, 将index插入到对应组中
+                    print "5555555555555555555555555555555"
+                    if insert_index(per, index):
+                        break
                 if job_overlap(p, per):
                     #调用插入函数, 将index插入到对应组中
+                    print "6666666666666666666666666666666"
                     if insert_index(per, index):
                         break
                 else:
@@ -552,8 +587,10 @@ def samename_distinguish(index, p):
                 #    flag += 1
             #添加生日为空，由于葛明
             elif p.name == per[1].name and per[1].birth == '':
-                if Sch_overlap(p, per) and job_overlap(p, per):
+                print "eeeeeeeeeeeeeeeeeeeeeeeeee"
+                if (p.degree == per[1].degree or Sch_overlap(p, per)) and job_overlap(p, per):
                     #调用插入函数, 将index插入到对应组中
+                    print "7777777777777777777777777777777"
                     if insert_index(per, index):
                         break
                 else:
