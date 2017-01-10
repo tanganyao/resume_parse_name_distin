@@ -317,7 +317,7 @@ class person:
             # if ostart:
             strcurtimetmp = self.getcurworktime(work)
             work = re.sub('^.*/t ','',work)
-            
+            #print work+'-------------------'
             if re.match(re.compile(u'^(.*?)(' + positiontag +u')$'), work):
                 
                 if strcurtimetmp:
@@ -359,18 +359,20 @@ class person:
         return oplist,curoplist
 
     def getworkexperience(self,tsentence,tsentencenotag):
-        # print tsentencenotag,'pppppppppppp'
+        #print tsentencenotag+'pppppppppppp'
         oplist = []
         curoplist = []
         #添加;
         if self.hasspecialstrings(tsentencenotag,curwtag + '|' + prewtag) or re.match(re.compile(u'^(.*?)(' + positiontag +u')(，|、|,|$)'), tsentencenotag): #含职位或者职位提示
             strwork = ''
-            #添加了 ;
-            reg = re.compile('(' + curwtag + '|' + prewtag + '|' + onamestarttag +')(.{0,}(' + positiontag +u'))(，|、|,|$)',re.S) #含职位和职位提示
+            #print tsentencenotag+'pppppppppppp'
+            #添加了 |
+            reg = re.compile('(' + curwtag + '|' + prewtag + '|' + onamestarttag +'|'')(.{0,}(' + positiontag +u'))(，|、|,|$)',re.S) #含职位和职位提示
             while(1):
                 m = reg.search(tsentencenotag)
                 if m:
                     strwork = m.group(2)
+                    #print strwork
                     strworkhead = tsentencenotag[0:tsentencenotag.find(strwork)]	#head this tag
                     tsentencenotag = tsentencenotag[tsentencenotag.find(strwork)+len(strwork):len(tsentencenotag)] #tail this tag
                     if not self.hasspecialstrings(strworkhead,u'毕业於|毕业于|就读于|就读|持有|获得|/t 生|生[^，|、|,]+ ([^ ]+)/t '):
@@ -405,14 +407,25 @@ class person:
         #print '################################################'
         oplist = []
         curoplist = []
+        #chi_num = '一|二|三|四|五|六|七|八|九'
         for i in range(len(lsentence)):
             tsentencenotag = ''
             tsentence=''
+            #除去不是阿拉伯数字的/t，比如，北京三九公司
+            #print lsentence[i]+"ssssssssssssssssssssss"
+            #re.sub(r'(.*?)('+chi_num+'\t)')
+            #for sentence in re.split('([^ 一二三四五六七八九]+/t )',lsentence[i]): #时间分割
             for sentence in re.split('([^ ]+/t )',lsentence[i]): #时间分割
                 tsentence += sentence
                 sentencenotagd = re.sub('/(?!(nt |nc |ns |t ))[a-zA-Z0-9]+ ','',sentence)
+                #print tsentencenotag+'pppppppppppppppppppppp'
+                #去掉如：三九的/t标志
+                #if re.search('^[一二三四五六七八九]+/t ', sentencenotagd):
+                #    re.sub('/t ', '', sentencenotagd)
+                #    print sentencenotagd+'######'
                 tsentencenotag += sentencenotagd
                 if sentence.find('/t ') < 0 and len(sentencenotagd.replace(' ','')) > 2:
+                    #print tsentencenotag+'pppppppppppppppppppppp'
                     o,c = self.getworkexperience(tsentence,tsentencenotag)
                     oplist += o
                     curoplist += c
@@ -476,7 +489,7 @@ def job_overlap(p, per):
                 if job == per_job:
                     return True
                 elif (len(job)>5 and len(per_job)>5) and (job in per_job or per_job in job):
-                    print job+'wwwwwwwwwwwwwwwwwwwwwwww'
+                    #print job+'wwwwwwwwwwwwwwwwwwwwwwww'
                     return True
     return False
 
@@ -511,8 +524,9 @@ def samename_distinguish(index, p):
     p.getschool()
     p.getwork()
 
+    p.joblist.append(p.sourceinfo[0])   #添加当前公司
     #print '\n'.join(p.joblist).encode('gb2312')
-    print p.birth
+    #print p.birth
     print ' '.join(p.joblist)
     print "!!!!!!!!!!!!!!!!!!!!!!!!"
     flag = 0
@@ -587,7 +601,7 @@ def samename_distinguish(index, p):
                 #    flag += 1
             #添加生日为空，由于葛明
             elif p.name == per[1].name and per[1].birth == '':
-                print "eeeeeeeeeeeeeeeeeeeeeeeeee"
+                #print "eeeeeeeeeeeeeeeeeeeeeeeeee"
                 if (p.degree == per[1].degree or Sch_overlap(p, per)) and job_overlap(p, per):
                     #调用插入函数, 将index插入到对应组中
                     print "7777777777777777777777777777777"
@@ -624,14 +638,13 @@ def doParse(linestr, index):
 ###############################################################################################################
 #添加index
 def readfile(file):
-    for index, line in enumerate(file.readlines()[:200]):
+    for index, line in enumerate(file.readlines()[:400]):
         line = line.decode('utf-8')
         doParse(line, index)
     for line in l_index:
         if len(line) > 1:
             print line
     #print l_person[1][1].person_data
-
 ##############################################################################################################
 def command_line():
     opt = optparse.OptionParser(usage="usage: %prog [OPTION]... [FILE]...")
